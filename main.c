@@ -22,6 +22,7 @@
 #include <string.h>
 #include "utilSudoku.h"
 #include "main.h"
+#include "sudoku.h"
 
 int  main(int argc,char *argv[])
 {
@@ -43,6 +44,17 @@ int  main(int argc,char *argv[])
  lireSudoku(fich,sudoku); 
  fprintf(stdout," sudoku lu: \n");
  ecrireSudoku(stdout,sudoku);
+
+    if (sudokuValide(sudoku)) {
+        printf("Et en plus il est valide !\n");
+    }
+
+    solveSudoku(sudoku);
+    printf("Résolution: \n");
+    ecrireSudoku(stdout, sudoku);
+    if (sudokuValide(sudoku)) {
+        printf("La solution est valide !\n");
+    }
 
    return(0);
 }
