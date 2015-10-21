@@ -7,10 +7,6 @@
 
 #define SUDOKU_ERROR 255
 
-void solveSudokuRec(int sudoku[SUDOKU_SIZE][SUDOKU_SIZE], char *hasResult);
-
-void copy_sudoku(int pInt[SUDOKU_SIZE][SUDOKU_SIZE], int child[SUDOKU_SIZE][SUDOKU_SIZE]);
-
 int sudokuValide(int sudoku[SUDOKU_SIZE][SUDOKU_SIZE]) {
 
     int i, j, rCol, rLin;
