@@ -5,11 +5,11 @@
 #ifndef TP2_SUDOKU_H
 #define TP2_SUDOKU_H
 #define SUDOKU_SIZE 9
-#define SUDOKU_DEBUG 1
+#define SUDOKU_DEBUG 0
 
 int sudokuValide(int sudoku[SUDOKU_SIZE][SUDOKU_SIZE]);
 
-void searchSolutions(int sudoku[SUDOKU_SIZE][SUDOKU_SIZE], int solutions[SUDOKU_SIZE][SUDOKU_SIZE]);
+int searchSolutions(int sudoku[SUDOKU_SIZE][SUDOKU_SIZE], int solutions[SUDOKU_SIZE][SUDOKU_SIZE]);
 
 void solveSudoku(int sudoku[SUDOKU_SIZE][SUDOKU_SIZE]);
 

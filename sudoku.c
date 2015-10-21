@@ -2,11 +2,14 @@
 // Created by pvienne on 27/09/15.
 //
 
-#include <stdio.h>
 #include <stdlib.h>
 #include "sudoku.h"
 
 #define SUDOKU_ERROR 255
+
+void solveSudokuRec(int sudoku[SUDOKU_SIZE][SUDOKU_SIZE], char *hasResult);
+
+void copy_sudoku(int pInt[SUDOKU_SIZE][SUDOKU_SIZE], int child[SUDOKU_SIZE][SUDOKU_SIZE]);
 
 int sudokuValide(int sudoku[SUDOKU_SIZE][SUDOKU_SIZE]) {
 
@@ -76,8 +79,9 @@ int sudokuValide(int sudoku[SUDOKU_SIZE][SUDOKU_SIZE]) {
     return 1;
 }
 
-void searchSolutions(int sudoku[SUDOKU_SIZE][SUDOKU_SIZE], int solutions[SUDOKU_SIZE][SUDOKU_SIZE]) {
+int searchSolutions(int sudoku[SUDOKU_SIZE][SUDOKU_SIZE], int solutions[SUDOKU_SIZE][SUDOKU_SIZE]) {
     int i, j;
+    int solutionsCount = 0;
     for (i = 0; i < SUDOKU_SIZE; i++) {
         for (j = 0; j < SUDOKU_SIZE; j++) {
             if (sudoku[i][j] > 0)
@@ -88,20 +92,15 @@ void searchSolutions(int sudoku[SUDOKU_SIZE][SUDOKU_SIZE], int solutions[SUDOKU_
             elementsInLine(seen, sudoku, i);
             elementsInRegion(seen, sudoku, i - (i % (SUDOKU_SIZE / 3)), j - (j % (SUDOKU_SIZE / 3)));
             int k = 0;
-            int hasSolution = 0;
             for (k = 0; k < SUDOKU_SIZE; k++) {
                 if (seen[k] == 0) {
-                    if (hasSolution == 0) {
-                        solutions[i][j] = k + 1;
-                        hasSolution = 1;
-                    } else if (hasSolution == 1) {
-                        solutions[i][j] = 0;
-                        hasSolution = -1;
-                    }
+                    solutions[i][j] += 1 << k + 1;
+                    solutionsCount++;
                 }
             }
         }
     }
+    return solutionsCount;
 }
 
 int countCellToSolve(int sudoku[SUDOKU_SIZE][SUDOKU_SIZE]) {
@@ -116,7 +115,27 @@ int countCellToSolve(int sudoku[SUDOKU_SIZE][SUDOKU_SIZE]) {
     return c;
 }
 
+/**
+ * Detects if x is a natural power of 2.
+ * For explains about this code, see :
+ * http://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
+ * Test n°9
+ */
+int isPowerOfTwo(int x) {
+    return ((x != 0) && !(x & (x - 1)));
+}
+
+int own_log2(int x) {
+    unsigned int ans = 0;
+    while (x >>= 1) ans++;
+    return ans;
+}
+
 void solveSudoku(int sudoku[SUDOKU_SIZE][SUDOKU_SIZE]) {
+    solveSudokuRec(sudoku, NULL);
+}
+
+void solveSudokuRec(int sudoku[SUDOKU_SIZE][SUDOKU_SIZE], char *hasResult) {
     int cellToSolve = countCellToSolve(sudoku);
     while (cellToSolve > 0) {
 
@@ -128,25 +147,69 @@ void solveSudoku(int sudoku[SUDOKU_SIZE][SUDOKU_SIZE]) {
         }
 
         // Search for solutions for this sudoku
-        searchSolutions(sudoku, solutions);
+        int count = searchSolutions(sudoku, solutions);
 
         // Put solutions in the sudoku
         int j;
         for (i = 0; i < SUDOKU_SIZE; i++) {
             for (j = 0; j < SUDOKU_SIZE; j++) {
-                if (solutions[i][j] != 0)
-                    sudoku[i][j] = solutions[i][j];
+                if (solutions[i][j] != 0 && isPowerOfTwo(solutions[i][j]))
+                    sudoku[i][j] = own_log2(solutions[i][j]);
             }
         }
 
         // Check if we have solved something
         int cellToSolveBefore = cellToSolve;
         cellToSolve = countCellToSolve(sudoku);
-        if (cellToSolve == cellToSolveBefore) { // If sudoku is not simple, stop computing
+        if (cellToSolve == cellToSolveBefore && count > 0) {
+            // If sudoku is not simple, create branch on each solution
+            // If one branch has successful solution, return it, unless set a dead flag !
+            char goOut = 0;
+            for (i = 0; i < SUDOKU_SIZE && !goOut; i++) {
+                for (j = 0; j < SUDOKU_SIZE && !goOut; j++) {
+                    if (solutions[i][j] != 0) {
+                        int k;
+                        for (k = 1; k < 10 && !goOut; k++) {
+                            if (solutions[i][j] & (1 << k)) {
 #if SUDOKU_DEBUG
-            fprintf(stderr, "The sudoku is not simple!");
+                                printf("%d est une solution en %d,%d\n", k, i, j);
 #endif
-            break;
+                                int sudokuChild[SUDOKU_SIZE][SUDOKU_SIZE];
+                                copy_sudoku(sudoku, sudokuChild);
+                                sudokuChild[i][j] = k;
+                                char value = 0;
+                                solveSudokuRec(sudokuChild, &value);
+                                if (value == 1 && sudokuValide(sudokuChild)) {
+                                    copy_sudoku(sudokuChild, sudoku);
+                                    goOut = 1;
+                                } else {
+#if SUDOKU_DEBUG
+                                    printf("Impossible de le faire !\n");
+#endif
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+#if SUDOKU_DEBUG
+            printf("Sudoku is not simple !\n");
+#endif
+            return;
+        } else if (count == 0) {
+            return;
+        }
+    }
+    if (hasResult != NULL && sudokuValide(sudoku))
+        *hasResult = 1;
+}
+
+void copy_sudoku(int parent[SUDOKU_SIZE][SUDOKU_SIZE], int child[SUDOKU_SIZE][SUDOKU_SIZE]) {
+    int i, j;
+    for (i = 0; i < SUDOKU_SIZE; i++) {
+        for (j = 0; j < SUDOKU_SIZE; j++) {
+            child[i][j] = parent[i][j];
         }
     }
 }
