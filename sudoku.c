@@ -192,9 +192,9 @@ void solveSudokuRec(int sudoku[SUDOKU_SIZE][SUDOKU_SIZE], char *hasResult) {
 #if SUDOKU_DEBUG
             printf("Sudoku is not simple !\n");
 #endif
-            return;
+            break;
         } else if (count == 0) {
-            return;
+            break;
         }
     }
     if (hasResult != NULL && sudokuValide(sudoku))
